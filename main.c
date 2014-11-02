@@ -1,21 +1,5 @@
-#include <sys/ptrace.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <errno.h>
-#include <sys/reg.h> /*ORIG_RAX, RAX*/
+#include "myptrace.h"
 
-/* Determine if 64/32 bit */
-#ifdef ORIG_EAX
-	const int const_orig_eax = ORIG_EAX;
-	const int const_eax = EAX;
-#else
-	 const int const_orig_eax = ORIG_RAX;
-	 const int const_eax = RAX;
-#endif
-
-int wait_for_syscall(pid_t child);
 int main()
 {
 	pid_t childPid;
@@ -27,7 +11,7 @@ int main()
 
 		if(childPid == 0) { /*In Child Process */ 
 			ptrace(PTRACE_TRACEME, 0, NULL, NULL);
-			execl("/bin/ls","ls", NULL);
+			execl("/bin/ls","ls", "-l", NULL);
 		}
 		else { /*In Parent Processs */
 			printf("\n========Hi I am in Parent Process=======\n");
@@ -41,12 +25,16 @@ int main()
 				if(wait_for_syscall(childPid) != 0) break;
 				orig_eax = ptrace(PTRACE_PEEKUSER, childPid, 
 						sizeof(long) * const_orig_eax, NULL);
-				printf("System Call Number is %ld ", orig_eax);
-				
+				if(orig_eax >= 0) {
+					const unsigned int len = 100; 
+					char tmp[len];
+					interpret_syscall((int)orig_eax, childPid, tmp, len);
+					printf("%s", tmp);
+				}
 				if(wait_for_syscall(childPid) != 0 ) break;
 				eax = ptrace(PTRACE_PEEKUSER, childPid, 
 					sizeof(long)*const_eax, NULL);
-				printf("Return Value = %ld\n",eax);
+				printf(" - Return Value = %ld\n",eax);
 			}
 		}
 	}
@@ -54,7 +42,6 @@ int main()
 		printf("Creation of Child Process failed\n");
 		printf("Error Code = %d\n", childPid);
 	}
-
 	return 0;
 }
 
