@@ -10,31 +10,47 @@ int main()
 	if(childPid >= 0) {
 
 		if(childPid == 0) { /*In Child Process */ 
+			int err;
+			printf("I am in child\n");
 			ptrace(PTRACE_TRACEME, 0, NULL, NULL);
-			execl("/bin/ls","ls", "-l", NULL);
+	#if defined(__arm__)
+			err = execl("/system/bin/ls","ls", NULL);
+	#else
+			err = execl("/bin/ls","ls", NULL);
+	#endif
+			if (err == -1) printf("Error @%d is %s\n",__LINE__, 
+				strerror(errno));
 		}
 		else { /*In Parent Processs */
 			printf("\n========Hi I am in Parent Process=======\n");
 			printf("Child PID = %d\n", childPid);
 
 			waitpid(childPid, &status, 0);
-			ptrace(PTRACE_SETOPTIONS, childPid, 0, 
-				PTRACE_O_TRACESYSGOOD);
+			if (!test_ptrace_setoptions_for_all())
+				ptrace(PTRACE_SETOPTIONS, childPid, 0, 
+					PTRACE_O_TRACESYSGOOD);
 			
 			while(1){
+				int reg_err;
+				long reg_array[MAX_SYS_REG_ENTRIES];
 				if(wait_for_syscall(childPid) != 0) break;
-				orig_eax = ptrace(PTRACE_PEEKUSER, childPid, 
-						sizeof(long) * const_orig_eax, NULL);
+				reg_err = get_regs(childPid, reg_array);
+				orig_eax = reg_array[0];
 				if(orig_eax >= 0) {
 					const unsigned int len = 100; 
 					char tmp[len];
-					interpret_syscall((int)orig_eax, childPid, tmp, len);
+					interpret_syscall(reg_array, 
+							childPid, tmp, len);
 					printf("%s", tmp);
 				}
+				else {
+					printf("Sys Call Error : %ld", (long)reg_array[0]);
+					printf("No : %d\n",errno);
+				}
 				if(wait_for_syscall(childPid) != 0 ) break;
-				eax = ptrace(PTRACE_PEEKUSER, childPid, 
-					sizeof(long)*const_eax, NULL);
-				printf(" - Return Value = %ld\n",eax);
+				reg_err = get_regs(childPid, reg_array);
+				eax = (long)reg_array[7];
+				printf(" - Return Value = %ld\n", eax);
 			}
 		}
 	}
@@ -50,7 +66,7 @@ int wait_for_syscall(pid_t child) {
 	while(1) {	
 		ptrace(PTRACE_SYSCALL, child, NULL, NULL);	
 		waitpid(child, &status, 0);
-		if (WIFSTOPPED(status) && (WSTOPSIG(status) & 0x80)) {
+		if (WIFSTOPPED(status) && (WSTOPSIG(status) ==(SIGTRAP | 0x80))) {
 			return 0;
 		}
 		if (WIFEXITED(status)) {
