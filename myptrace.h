@@ -8,33 +8,14 @@
 #include <sys/reg.h> /*ORIG_RAX, RAX*/
 #include <string.h>
 #include <stdlib.h>
+
 #if defined(__x86_64__)
 	#include <sys/user.h>
 #else
 	#include <sys/user.h>
 	#include <asm/ptrace.h>
 #endif
-#include "defs.h"
 
-
-/* Determine if 64/32 bit */
-#ifdef ORIG_EAX
-	//printf("****32 Bit System\n");
-	const int const_orig_eax = ORIG_EAX;
-	const int const_eax = EAX;
-	const int const_ebx = EBX;
-	const int const_ecx = ECX;
-	const int const_edx = EDX;
-#else
-	//printf("****64 Bit System\n");
-	const int const_orig_eax = ORIG_RAX;
-	const int const_eax = RAX;
-	const int const_ebx = RBX;
-	const int const_ecx = RCX;
-	const int const_edx = RDX;
-#endif
-
-#define MAX_STRING_LEN 50
 #define MAX_REG_ENTRIES 30
 #define MAX_SYS_REG_ENTRIES 8
 
@@ -48,8 +29,20 @@ void interpret_open(long *, pid_t, char *,unsigned int);
 int get_string_data_unbounded(pid_t, long, char *, int);
 void get_string_data(pid_t, long, char *,int);
 int get_regs(pid_t, long *);
-int get_regs_size();
 
+
+#include "defs.h"
+#include "syscall_interpret.h"
+
+/* Interpret Syscall 
+ * reg_array - contains all the regs needed to interpret syscall
+ * child - tracee's PID
+ * buf - Buffer
+ * len - Length of the buffer
+ * 
+ * This func is responsible for interpreting syscalls . It checks 
+ * syscall no and sends to appropriate handler
+ */
 int interpret_syscall(long *reg_array, pid_t child, 
 	char *buf, unsigned int len)
  {
@@ -71,57 +64,15 @@ int interpret_syscall(long *reg_array, pid_t child,
  	return 0;
  } 
 
-void interpret_write(long *reg_array, pid_t child, char *buf,
-	unsigned int len) 
-{
-	long ebx, ecx, edx;
-	ebx = reg_array[1];
-	ecx = reg_array[2];
-	edx = reg_array[3];
-	snprintf(buf ,len ,"write( %u, %u, %d)",(unsigned int) ebx,
-		(unsigned int) ecx, (int) edx);	
-}
-
-void interpret_read(long *reg_array, pid_t child, char *buf,
-	unsigned int len) 
-{
-	long ebx, ecx, edx;
-	ebx = reg_array[1];
-	ecx = reg_array[2];
-	edx = reg_array[3];
-	snprintf(buf ,len ,"read( %u, %u, %d)",(unsigned int) ebx,
-		(unsigned int) ecx, (int) edx);	
-}
-
-void interpret_open(long *reg_array, pid_t child, char *buf,
-	unsigned int len) 
-{
-	long ebx, ecx, edx;
-	int err;
-	char *fname = (char *) malloc(sizeof(char)*(MAX_STRING_LEN+1));
-	ebx = reg_array[1];
-	ecx = reg_array[2];
-	edx = reg_array[3];
-	err = get_string_data_unbounded(child, ebx, fname,
-		 MAX_STRING_LEN);
-	if (err) 
-		fname[0] = '\0';
-	snprintf(buf ,len ,"open( %s, %d, %d)",fname,
-		(int) ecx, (int) edx);
-	
-	/*CLEANUP*/
-	if(fname) free(fname);	
-}
-int get_regs_size() 
-{
-	#if defined(__i386__) || defined(__x86_64__)
-		return sizeof(struct user_regs_struct);		
-	#elif defined(__arm__)
-		return sizeof(struct arm_pt_regs);
-	#else
-		return MAX_REG_ENTRIES;
-	#endif
-}
+/* Get_regs 
+ * child - tracee's PID
+ * buf - Buffer
+ * 
+ * This func is responsible for collecting all the regs used for 
+ * syscalls. It creates a reg_array of size MAX_SYS_REG_ENTRIES
+ * .The order of regs is orig_eax (syscall no), ebx, ecx, edx,
+ * esi, ebp, eax (return Value) 
+ */
 int get_regs(pid_t child, long *buf) {
 	#if defined(__i386__) || defined(__x86_64__)
 		struct user_regs_struct i386_regs;
@@ -167,6 +118,17 @@ int get_regs(pid_t child, long *buf) {
 
 	return err;
 }
+
+/* Get_String_Data 
+ * child - tracee's PID
+ * addr - Memory Address where string resides
+ * str - buffer to write the data
+ * len - string length
+ * 
+ * This func is responsible for fetching the string data from 
+ * a given memory location pointed by "addr. Use this func when 
+ * when length of the memory is known. 
+ */
 void get_string_data(pid_t child, long addr, char *str, int len)
 {
 	int i, j;
@@ -196,6 +158,19 @@ void get_string_data(pid_t child, long addr, char *str, int len)
 	laddr[len] = '\0';
 
 }
+
+/* Get_String_Data 
+ * child - tracee's PID
+ * addr - Memory Address where string resides
+ * str - buffer to write the data
+ * len - Max len to check read for the string data
+ * 
+ * This func is responsible for fetching the string data from 
+ * a given memory location pointed by "addr. The length of the 
+ * string data is not known in advance, so this function reads 
+ * data till a MAX_LIMIT value and until it finds a String 
+ * terminating character. 
+ */
 int get_string_data_unbounded(pid_t child, long addr, char *str, 
 	int len)
 {
@@ -240,6 +215,11 @@ int get_string_data_unbounded(pid_t child, long addr, char *str,
 
 }
 
+/* Test Ptrace Set Options
+ * 
+ * This func checks if the option PTRACE_O_TRACESYSGOOD
+ * works for this architecture or not.
+ */
 static int test_ptrace_setoptions_for_all(void)
 {
 	const unsigned int test_options = PTRACE_O_TRACESYSGOOD |
