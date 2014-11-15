@@ -1,0 +1,212 @@
+mprotect(-1225175040, 4096, 1) = 0
+ugetrlimit(0x3, 0xbeb77978, 0xffffffb4, 0xb6f97660, 0xbeb77000, 0xbeb78000) = 0
+gettid() = 1056
+sys_983045(0xb6f96f24, 0xffffffb8, 0x0, 0xb6f96f24, 0xb6f97154, 0x0) = 0
+mmap2(0x0, 0x2000, 0x3, 0x22, 0x0, 0x0) = -1225244672
+madvise(-1225244672, 8192, 12) = -22
+sigaltstack(0xbeb7795c, 0x0) = 0
+sigaction(6, 0xbeb77988, 0x0) = 0
+sigaction(7, 0xbeb77988, 0x0) = 0
+sigaction(8, 0xbeb77988, 0x0) = 0
+sigaction(4, 0xbeb77988, 0x0) = 0
+sigaction(13, 0xbeb77988, 0x0) = 0
+sigaction(11, 0xbeb77988, 0x0) = 0
+sigaction(16, 0xbeb77988, 0x0) = 0
+sigaction(5, 0xbeb77988, 0x0) = 0
+mmap2(0x0, 0xffc, 0x3, 0x22, 0x0, 0x0) = -1225248768
+madvise(-1225248768, 4092, 12) = -22
+open("/vendor/lib/libcutils.so", 655360, 0) = -2
+open("/system/lib/libcutils.so", 655360, 0) = 3
+read(3, "Ø_ù¶èiø¶·tø¶", 52) = 52
+mmap2(0x0, 0x1000, 0x1, 0x2, 0x3, 0x0) = -1225252864
+madvise(-1225252864, 4096, 12) = -22
+mmap2(0x0, 0xb000, 0x0, 0x22, 0xffffffff, 0x0) = -1225297920
+madvise(-1225297920, 45056, 12) = -22
+mmap2(0xb6f77000, 0x8afd, 0x5, 0x12, 0x3, 0x0) = -1225297920
+madvise(-1225297920, 35581, 12) = -22
+mmap2(0xb6f80000, 0x104c, 0x3, 0x12, 0x3, 0x8) = -1225261056
+madvise(-1225261056, 4172, 12) = -22
+close(3) = 0
+munmap(-1225252864, 4096) = 0
+open("/vendor/lib/liblog.so", 655360, 0) = -2
+open("/system/lib/liblog.so", 655360, 0) = 3
+read(3, "", 52) = 52
+mmap2(0x0, 0x1000, 0x1, 0x2, 0x3, 0x0) = -1225252864
+madvise(-1225252864, 4096, 12) = -22
+mmap2(0x0, 0x5000, 0x0, 0x22, 0xffffffff, 0x0) = -1225318400
+madvise(-1225318400, 20480, 12) = -22
+mmap2(0xb6f72000, 0x2a4e, 0x5, 0x12, 0x3, 0x0) = -1225318400
+madvise(-1225318400, 10830, 12) = -22
+mmap2(0xb6f75000, 0x1018, 0x3, 0x12, 0x3, 0x2) = -1225306112
+madvise(-1225306112, 4120, 12) = -22
+close(3) = 0
+munmap(-1225252864, 4096) = 0
+open("/vendor/lib/libc.so", 655360, 0) = -2
+open("/system/lib/libc.so", 655360, 0) = 3
+read(3, "", 52) = 52
+mmap2(0x0, 0x1000, 0x1, 0x2, 0x3, 0x0) = -1225252864
+madvise(-1225252864, 4096, 12) = -22
+mmap2(0x0, 0x5a000, 0x0, 0x22, 0xffffffff, 0x0) = -1225687040
+madvise(-1225687040, 368640, 12) = -22
+mmap2(0xb6f18000, 0x461a4, 0x5, 0x12, 0x3, 0x0) = -1225687040
+madvise(-1225687040, 287140, 12) = -22
+mmap2(0xb6f5f000, 0x42bc, 0x3, 0x12, 0x3, 0x46) = -1225396224
+madvise(-1225396224, 17084, 12) = -22
+mmap2(0xb6f64000, 0xe000, 0x3, 0x32, 0xffffffff, 0x0) = -1225375744
+madvise(-1225375744, 57344, 12) = -22
+close(3) = 0
+munmap(-1225252864, 4096) = 0
+mprotect(-1225396224, 8192, 1) = 0
+open("/vendor/lib/libstdc++.so", 655360, 0) = -2
+open("/system/lib/libstdc++.so", 655360, 0) = 3
+read(3, "ELF", 52) = 52
+mmap2(0x0, 0x1000, 0x1, 0x2, 0x3, 0x0) = -1225252864
+madvise(-1225252864, 4096, 12) = -22
+mmap2(0x0, 0x3000, 0x0, 0x22, 0xffffffff, 0x0) = -1225699328
+madvise(-1225699328, 12288, 12) = -22
+mmap2(0xb6f15000, 0xaa1, 0x5, 0x12, 0x3, 0x0) = -1225699328
+madvise(-1225699328, 2721, 12) = -22
+mmap2(0xb6f16000, 0x1004, 0x3, 0x12, 0x3, 0x0) = -1225695232
+madvise(-1225695232, 4100, 12) = -22
+close(3) = 0
+munmap(-1225252864, 4096) = 0
+mprotect(-1225695232, 4096, 1) = 0
+open("/vendor/lib/libm.so", 655360, 0) = -2
+open("/system/lib/libm.so", 655360, 0) = 3
+read(3, "ELF", 52) = 52
+mmap2(0x0, 0x1000, 0x1, 0x2, 0x3, 0x0) = -1225252864
+madvise(-1225252864, 4096, 12) = -22
+mmap2(0x0, 0x1b000, 0x0, 0x22, 0xffffffff, 0x0) = -1225809920
+madvise(-1225809920, 110592, 12) = -22
+mmap2(0xb6efa000, 0x1812c, 0x5, 0x12, 0x3, 0x0) = -1225809920
+madvise(-1225809920, 98604, 12) = -22
+mmap2(0xb6f13000, 0x106c, 0x3, 0x12, 0x3, 0x18) = -1225707520
+madvise(-1225707520, 4204, 12) = -22
+close(3) = 0
+munmap(-1225252864, 4096) = 0
+mprotect(-1225707520, 4096, 1) = 0
+mprotect(-1225306112, 4096, 1) = 0
+mprotect(-1225261056, 4096, 1) = 0
+open("/vendor/lib/libusbhost.so", 655360, 0) = -2
+open("/system/lib/libusbhost.so", 655360, 0) = 3
+read(3, "ELF", 52) = 52
+mmap2(0x0, 0x1000, 0x1, 0x2, 0x3, 0x0) = -1225252864
+madvise(-1225252864, 4096, 12) = -22
+mmap2(0x0, 0x4000, 0x0, 0x22, 0xffffffff, 0x0) = -1225826304
+madvise(-1225826304, 16384, 12) = -22
+mmap2(0xb6ef6000, 0x1b04, 0x5, 0x12, 0x3, 0x0) = -1225826304
+madvise(-1225826304, 6916, 12) = -22
+mmap2(0xb6ef8000, 0x1004, 0x3, 0x12, 0x3, 0x1) = -1225818112
+madvise(-1225818112, 4100, 12) = -22
+close(3) = 0
+munmap(-1225252864, 4096) = 0
+mprotect(-1225818112, 4096, 1) = 0
+open("/vendor/lib/libselinux.so", 655360, 0) = -2
+open("/system/lib/libselinux.so", 655360, 0) = 3
+read(3, "ELF", 52) = 52
+mmap2(0x0, 0x1000, 0x1, 0x2, 0x3, 0x0) = -1225252864
+madvise(-1225252864, 4096, 12) = -22
+mmap2(0x0, 0xd000, 0x0, 0x22, 0xffffffff, 0x0) = -1225879552
+madvise(-1225879552, 53248, 12) = -22
+mmap2(0xb6ee9000, 0x9f5b, 0x5, 0x12, 0x3, 0x0) = -1225879552
+madvise(-1225879552, 40795, 12) = -22
+mmap2(0xb6ef4000, 0x1030, 0x3, 0x12, 0x3, 0xa) = -1225834496
+madvise(-1225834496, 4144, 12) = -22
+close(3) = 0
+munmap(-1225252864, 4096) = 0
+mprotect(-1225834496, 4096, 1) = 0
+mprotect(-1225035776, 4096, 1) = 0
+open("/dev/__properties__", 688128, 0) = 3
+fcntl64(3, 2, 1) = 0
+fstat64(3, 0xbeb77818) = 0
+mmap2(0x0, 0x20000, 0x1, 0x1, 0x3, 0x0) = -1226010624
+close(3) = 0
+futex(0xb6f63518, 129, 2147483647, 0x0, 0xb6f63518, -1225630219) = 0
+mprotect(-1225248768, 4092, 3) = 0
+mprotect(-1225248768, 4092, 3) = 0
+mprotect(-1225248768, 4092, 3) = 0
+mprotect(-1225248768, 4092, 3) = 0
+mprotect(-1225248768, 4092, 3) = 0
+clock_gettime(1, 0xbeb77888) = 0
+mprotect(-1225248768, 4092, 3) = 0
+statfs64("/sys/fs/selinux", 88, 0xbeb77478) = 0
+gettimeofday(0xbeb77410, 0x0) = 0
+brk(0) = -1203490816
+brk(-1203490816) = -1203490816
+brk(-1203486720) = -1203486720
+mprotect(-1225248768, 4092, 3) = 0
+mprotect(-1225248768, 4092, 1) = 0
+mmap2(0x0, 0x1000, 0x3, 0x22, 0xffffffff, 0x0) = -1225252864
+madvise(-1225252864, 4096, 12) = -22
+mprotect(-1225252864, 4096, 1) = 0
+lstat64(".", 0xbeb77a20) = 0
+open(".", 147456, 0) = 3
+brk(-1203482624) = -1203482624
+getdents64(3, 0xb8443048, 4200) = 24
+getdents64(3, 0xb8443048, 4200) = 24
+getdents64(3, 0xb8443048, 4200) = 32
+getdents64(3, 0xb8443048, 4200) = 32
+getdents64(3, 0xb8443048, 4200) = 32
+getdents64(3, 0xb8443048, 4200) = 32
+getdents64(3, 0xb8443048, 4200) = 32
+getdents64(3, 0xb8443048, 4200) = 40
+getdents64(3, 0xb8443048, 4200) = 32
+getdents64(3, 0xb8443048, 4200) = 32
+getdents64(3, 0xb8443048, 4200) = 32
+getdents64(3, 0xb8443048, 4200) = 24
+getdents64(3, 0xb8443048, 4200) = 32
+getdents64(3, 0xb8443048, 4200) = 32
+getdents64(3, 0xb8443048, 4200) = 32
+getdents64(3, 0xb8443048, 4200) = 32
+getdents64(3, 0xb8443048, 4200) = 0
+fstat64(1, 0xbeb755f8) = 0
+ioctl(1, 21505, -1095281080) = 0
+write(1, "Alarms
+", 7) = 7
+write(1, "Android
+", 8) = 8
+write(1, "DCIM
+id
+", 5) = 5
+write(1, "Download
+", 9) = 9
+write(1, "LOST.DIR
+", 9) = 9
+write(1, "Movies
+R
+", 7) = 7
+write(1, "Music
+
+R
+", 6) = 6
+write(1, "Notifications
+", 14) = 14
+write(1, "Pictures
+ions
+", 9) = 9
+write(1, "Podcasts
+ions
+", 9) = 9
+write(1, "Ringtones
+ons
+", 10) = 10
+write(1, "andro
+nes
+ons
+", 6) = 6
+write(1, "test.txt
+
+ons
+", 9) = 9
+write(1, "testing.txt
+s
+", 12) = 12
+close(3) = 0
+mprotect(-1225252864, 4096, 3) = 0
+mprotect(-1225252864, 4096, 1) = 0
+close(0) = 0
+close(1) = 0
+close(2) = 0
+futex(0xb6f64d4c, 129, 2147483647, 0xb6f63514, 0xb6f64d4c, -1225631451) = 0
+munmap(-1225252864, 4096) = 0
+exit_group(0) = 
