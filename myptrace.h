@@ -5,20 +5,29 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/syscall.h>
-#include <sys/reg.h> /*ORIG_RAX, RAX*/
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
-#if defined(__x86_64__)
+#if defined(__x86_64__) || defined(_x86__)
+	#include <sys/reg.h>
 	#include <sys/user.h>
+	#if defined(_x86__)
+		#include "syscallents_x86.h"
+	#else
+		#include "syscallents_x86_64.h"
+	#endif
 #else
 	#include <sys/user.h>
 	#include <asm/ptrace.h>
+	#include "syscallents_arm.h"
 #endif
 
+#define char_size sizeof(char)
 #define MAX_REG_ENTRIES 30
 #define MAX_SYS_REG_ENTRIES 8
-
+#define DBG printf("In %s at %d", __FUNCTION__, __LINE__)
 const int long_size = sizeof(long);
 int wait_for_syscall(pid_t child);
 
@@ -29,7 +38,12 @@ void interpret_open(long *, pid_t, char *,unsigned int);
 int get_string_data_unbounded(pid_t, long, char *, int);
 void get_string_data(pid_t, long, char *,int);
 int get_regs(pid_t, long *);
-
+int write_file(char *buf, int len) ;
+int open_file(char *fname);
+void print_syscall(pid_t , long* , char *, int );
+void print_syscall_args(pid_t , long* , char *, int );
+const char *syscall_name(int scn);
+char *read_string(pid_t child, unsigned long addr);
 
 #include "defs.h"
 #include "syscall_interpret.h"
@@ -98,12 +112,12 @@ int get_regs(pid_t child, long *buf) {
 		buf[7] = my_regs.eax;
 	#elif defined(__x86_64__)
 		buf[0] = (long)my_regs.orig_rax;
-		buf[1] = (long)my_regs.rbx;
-		buf[2] = (long)my_regs.rcx;
+		buf[1] = (long)my_regs.rdi;
+		buf[2] = (long)my_regs.rsi;
 		buf[3] = (long)my_regs.rdx;
-		buf[4] = (long)my_regs.rsi;
-		buf[5] = (long)my_regs.rdi;
-		buf[6] = (long)my_regs.rbp;
+		buf[4] = (long)my_regs.rcx;
+		buf[5] = (long)my_regs.r8;
+		buf[6] = (long)my_regs.r9;
 		buf[7] = (long)my_regs.rax;
 	#else
 		buf[0] = my_regs.ARM_r7;
@@ -118,7 +132,93 @@ int get_regs(pid_t child, long *buf) {
 
 	return err;
 }
+void print_syscall(pid_t child, long* sys_regs, char *buf, 
+	int slen) {
+    int num;
+    char *out_str = buf;
+    num = sys_regs[0];
 
+    snprintf(&out_str[strlen(out_str)], 
+    	(slen-strlen(out_str)), "%s(", syscall_name(num));
+    print_syscall_args(child, sys_regs, &out_str[strlen(out_str)], 
+    	(slen-strlen(out_str)));
+    snprintf(&out_str[strlen(out_str)], 
+    	(slen-strlen(out_str)), ") = ");
+
+}
+
+void print_syscall_args(pid_t child, long* sys_regs, char * buf,int slen) {
+    struct syscall_entry *ent = NULL;
+    int nargs = SYSCALL_MAXARGS;
+    int i;
+    int num = sys_regs[0];
+
+    if (num <= MAX_SYSCALL_NUM && syscalls[num].name) {
+        ent = &syscalls[num];
+        nargs = ent->nargs;
+    }
+    for (i = 0; i < nargs; i++) {
+        long arg = sys_regs[i+1];
+        int type = ent ? ent->args[i] : ARG_PTR;
+        switch (type) {
+        case ARG_INT:
+            snprintf(&buf[strlen(buf)], slen -strlen(buf), 
+            	"%ld", arg);
+            break;
+        case ARG_STR:
+    		{
+    			char *strval = read_string(child, arg);
+            	snprintf(&buf[strlen(buf)], slen -strlen(buf), 
+            		"\"%s\"", strval);
+            	free(strval);
+            }
+            break;
+        default:
+            snprintf(&buf[strlen(buf)], slen -strlen(buf), 
+            	 "0x%lx", arg);
+            break;
+        }
+        if (i != nargs - 1)
+            snprintf(&buf[strlen(buf)], slen -strlen(buf),  ", ");
+    }
+}
+const char *syscall_name(int scn) {
+    struct syscall_entry *ent;
+    static char buf[128];
+    if (scn <= MAX_SYSCALL_NUM) {
+        ent = &syscalls[scn];
+        if (ent->name)
+            return ent->name;
+    }
+    snprintf(buf, sizeof buf, "sys_%d", scn);
+    return buf;
+}
+char *read_string(pid_t child, unsigned long addr) {
+    
+    int allocated = MAX_STRING_LEN, diff;
+    char *val = calloc(allocated+1, sizeof(char));
+    int read = 0;
+    unsigned long tmp;
+    while (1) {
+        
+        tmp = ptrace(PTRACE_PEEKDATA, child, addr + read);
+        if(errno != 0) {
+            snprintf(val, allocated, "%s",strerror(errno));
+            break;
+        }
+        if (read + sizeof tmp > allocated) {
+            diff = (allocated - read -1);
+        	memcpy(val + read, &tmp, diff);
+        	val[allocated] = '\0';
+        	break;
+        }
+        memcpy(val + read, &tmp, sizeof tmp);
+        if (memchr(&tmp, 0, sizeof tmp) != NULL)
+            break;
+        read += sizeof tmp;
+    }
+    return val;
+}
 /* Get_String_Data 
  * child - tracee's PID
  * addr - Memory Address where string resides
@@ -211,7 +311,8 @@ int get_string_data_unbounded(pid_t child, long addr, char *str,
 		memcpy(laddr, data.chars, long_size);
 		laddr += j;
 	}
-	return -1; // No NULL char was found
+	laddr[len] = '\0';
+	return 0; // No NULL char was found
 
 }
 

@@ -1,26 +1,54 @@
 #include "myptrace.h"
 
+FILE* fd = NULL;
+
 int main(int argc, char* argv[])
 {
 	pid_t childPid;
 	long orig_eax, eax;
 	int status;
+	char *tmp = NULL;
 	char **cmd_path;
 	char *cmd_name;
+	int ret = 0, trace_flag = 0;
 
 	if(argc < 2) {
 		cmd_name = "ls";
 		cmd_path = (char *[]){"ls", NULL};
 	}
-	else {
+	else if (!strcmp(argv[1], "run_app") && argc == 4){
+		char arg_buf[100];
+		int i;
+		snprintf(arg_buf, 100,"%s/.%s", argv[2], argv[3]); 
+		cmd_name = "am";
+		cmd_path = (char *[]){"am", "start", "-n", 
+			arg_buf, NULL};
+		printf("Run App Arguments : \n");
+		i = 0;
+		while (cmd_path[i] != NULL){
+			printf("%s", cmd_path[i++]);
+		}
+	}
+	else if (!strcmp(argv[1], "-p") && argc == 3) {
+		trace_flag = 1;
+	}
+	else {	
 		cmd_name = argv[1];
 		cmd_path = &argv[1] ;
 	}
-
-	childPid = fork();
+	if (trace_flag == 1) {
+		childPid = (pid_t)strtol(argv[2], NULL, 10);
+		ptrace(PTRACE_ATTACH, childPid, NULL, NULL);	
+		if (errno < 0) 
+			printf("ATTACH Error is %s\n",strerror(errno));
+		else printf("ATTACH Success\n");
+	}
+	else {
+		childPid = fork();
+	}
 	if(childPid >= 0) {
 
-		if(childPid == 0) { /*In Child Process */ 
+		if(childPid == 0 && trace_flag != 1) { /*In Child Process */ 
 			int err;
 			printf("I am in child\n");
 			ptrace(PTRACE_TRACEME, 0, NULL, NULL);
@@ -35,17 +63,30 @@ int main(int argc, char* argv[])
 				strerror(errno));
 		}
 		else { /*In Parent Processs */
+			
 			printf("\n========Hi I am in Parent Process=======\n");
 			printf("Child PID = %d\n", childPid);
-
+			
+			if(open_file("/storage/sdcard/testing.txt")) {
+				ret = errno;
+				
+				goto err_exit;
+			}
+			
 			waitpid(childPid, &status, 0);
-			if (!test_ptrace_setoptions_for_all())
+			
+			//if (!test_ptrace_setoptions_for_all()) {
 				ptrace(PTRACE_SETOPTIONS, childPid, 0, 
 					PTRACE_O_TRACESYSGOOD);
-			
+			//	printf("PTRACE_SETOPTIONS Success\n");
+			//}
+
+						
 			while(1){
 				int reg_err;
 				long reg_array[MAX_SYS_REG_ENTRIES];
+				const unsigned int len = MAX_OUT_STRING_LEN;; 
+				tmp = (char *) calloc(len, sizeof(char));
 				
 				if(wait_for_syscall(childPid) != 0) break;
 				
@@ -53,11 +94,13 @@ int main(int argc, char* argv[])
 				orig_eax = reg_array[0];
 				
 				if(orig_eax >= 0) {
-					const unsigned int len = 100; 
-					char tmp[len];
-					interpret_syscall(reg_array, 
-							childPid, tmp, len);
+					print_syscall(childPid, reg_array, tmp, len);
 					printf("%s", tmp);
+					
+					if (write_file(tmp, strlen(tmp)) < 0) {
+						ret = errno;
+						goto err_exit;
+					}
 				}
 				else {
 					printf("Sys Call Error : %ld", (long)reg_array[0]);
@@ -67,7 +110,14 @@ int main(int argc, char* argv[])
 				
 				reg_err = get_regs(childPid, reg_array);
 				eax = (long)reg_array[7];
-				printf(" - Return Value = %ld\n", eax);
+				printf("%ld\n", eax);
+				snprintf(tmp, len,"%ld\n", eax);
+				
+				if (write_file(tmp, strlen(tmp)) < 0) {
+					ret = errno;
+					goto err_exit;
+				}
+				
 			}
 		}
 	}
@@ -75,7 +125,12 @@ int main(int argc, char* argv[])
 		printf("Creation of Child Process failed\n");
 		printf("Error Code = %d\n", childPid);
 	}
-	return 0;
+
+	err_exit:
+	if(tmp) free(tmp);
+	if(fd) fclose(fd);
+
+	return ret;
 }
 /* Wait For SysCall
  * child - PID of the Tracee
@@ -100,4 +155,26 @@ int wait_for_syscall(pid_t child) {
 			return 1;
 		}
 	}
+}
+
+int open_file(char *fname) {
+	fd = fopen(fname, "w");
+	if(!fd) {
+		printf("Error: %s", strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
+int write_file(char *buf, int len) 
+{
+	int tmp = 0, wb = 0;
+	tmp = fwrite(buf,char_size, len, fd);
+	wb = tmp/char_size;
+	if ( wb != len || tmp == EOF) {
+		printf("Error: %s", strerror(errno));
+		return -1;
+	}
+	fflush(fd);
+	return tmp/char_size;
 }

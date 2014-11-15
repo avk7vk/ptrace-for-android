@@ -3,8 +3,8 @@
  * This Header file contains the functions to interpret arguments of
  * supported System calls.
  */
-#define MAX_STRING_LEN 50
- 
+#define MAX_STRING_LEN 30
+#define MAX_OUT_STRING_LEN 200
 
 void interpret_write(long *reg_array, pid_t child, char *buf,
 	unsigned int len) 
