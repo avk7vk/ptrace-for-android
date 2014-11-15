@@ -1,0 +1,47 @@
+TODO :
+
+# get pid by process name
+# port the code to NDK - Done
+# Develop a UI for the APP - Done (Basic)
+# Add Support for some IMP sys calls
+
+IMP Syscalls
+--------------
+Network
+=========
+sys_socket(2)                */
+sys_bind(2)                  */
+sys_connect(2)               */
+sys_listen(2)                */
+sys_accept(2)                */
+sys_getsockname(2)           */
+sys_getpeername(2)           */
+sys_socketpair(2)            */
+sys_send(2)                  */
+sys_recv(2)                  */
+sys_sendto(2)                */
+sys_recvfrom(2)              */
+sys_shutdown(2)              */
+sys_setsockopt(2)            */
+sys_getsockopt(2)            */
+sys_sendmsg(2)               */
+sys_recvmsg(2)               */
+
+File I/O
+==========
+open
+close
+read
+write
+
+Category of syscalls : http://www.softpanorama.org/Internals/unix_system_calls.shtml
+
+Regarding parsing syscalls from a file 
+========================================
+The input will be in the form :
+sys_name(arg1, arg2, arg3 ....) = ret_val
+
+So we need a list of objects, each object has 3 elements :
+1. syscall name
+2. list of args 
+3. ret_val
