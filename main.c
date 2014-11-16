@@ -119,6 +119,8 @@ int main(int argc, char* argv[])
 				}
 				
 			}
+			if (trace_flag == 1)
+				ptrace(PTRACE_DETACH, childPid, NULL, NULL);
 		}
 	}
 	else {
@@ -152,6 +154,10 @@ int wait_for_syscall(pid_t child) {
 		}
 		if (WIFEXITED(status)) {
 			printf("Child process exited Normally\n");
+			return 1;
+		}
+		if (WIFSIGNALED(status) && WTERMSIG(status) == SIGKILL) {
+			printf("Child process was KILL\n");
 			return 1;
 		}
 	}
