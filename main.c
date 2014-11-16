@@ -11,6 +11,8 @@ int main(int argc, char* argv[])
 	char **cmd_path;
 	char *cmd_name;
 	int ret = 0, trace_flag = 0;
+	int block = 0;
+	char *filename = NULL;
 
 	if(argc < 2) {
 		cmd_name = "ls";
@@ -29,8 +31,13 @@ int main(int argc, char* argv[])
 			printf("%s", cmd_path[i++]);
 		}
 	}
-	else if (!strcmp(argv[1], "-p") && argc == 3) {
+	else if (!strcmp(argv[1], "-p") && (argc == 3||argc == 5)) {
 		trace_flag = 1;
+		if (argc == 5 && !strcmp(argv[3], "-i")) {
+			block = 1;
+			filename = argv[4];
+		}
+		
 	}
 	else {	
 		cmd_name = argv[1];
@@ -67,7 +74,7 @@ int main(int argc, char* argv[])
 			printf("\n========Hi I am in Parent Process=======\n");
 			printf("Child PID = %d\n", childPid);
 			
-			if(open_file("/storage/sdcard/testing.txt")) {
+			if(open_file("testing.txt")) {
 				ret = errno;
 				
 				goto err_exit;
@@ -89,11 +96,18 @@ int main(int argc, char* argv[])
 				tmp = (char *) calloc(len, sizeof(char));
 				
 				if(wait_for_syscall(childPid) != 0) break;
-				
+				// sys call entry
+
 				reg_err = get_regs(childPid, reg_array);
 				orig_eax = reg_array[0];
 				
 				if(orig_eax >= 0) {
+					if (block == 1) {
+						if (check_blocklist(filename, orig_eax) == 1) {
+							kill(childPid,SIGKILL);
+							goto err_exit;
+						}
+					}
 					print_syscall(childPid, reg_array, tmp, len);
 					printf("%s", tmp);
 					
@@ -107,7 +121,7 @@ int main(int argc, char* argv[])
 					printf("No : %d\n",errno);
 				}
 				if(wait_for_syscall(childPid) != 0 ) break;
-				
+				// sys call exit
 				reg_err = get_regs(childPid, reg_array);
 				eax = (long)reg_array[7];
 				printf("%ld\n", eax);
@@ -131,7 +145,6 @@ int main(int argc, char* argv[])
 	err_exit:
 	if(tmp) free(tmp);
 	if(fd) fclose(fd);
-
 	return ret;
 }
 /* Wait For SysCall

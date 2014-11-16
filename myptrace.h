@@ -193,6 +193,37 @@ const char *syscall_name(int scn) {
     snprintf(buf, sizeof buf, "sys_%d", scn);
     return buf;
 }
+int check_blocklist(char* filename, unsigned long eax) {
+	char *line = NULL;
+	size_t len = 0;
+	int ret = 0;
+	ssize_t read;
+	FILE *fp = NULL;
+	if(!filename)
+		goto out;
+	fp = fopen(filename, "r");
+	if (!fp)
+		goto out;
+	while ((read = getline(&line, &len, fp)) != -1) {
+		line[(int)strlen(line)-1] = '\0';
+		if (!strcmp(line, syscall_name(eax))) {
+			printf("System call %s matched with entry in "
+				" in block list\n", line);
+			ret = 1;
+		}
+		//printf("%s %s\n",line, syscall_name(eax));
+		if(line) {
+			free(line);
+			line = NULL;
+		}
+		if(ret == 1)
+			break;
+	}
+	out:
+	if (fp)
+		fclose(fp);
+	return ret;
+}
 char *read_string(pid_t child, unsigned long addr) {
     
     int allocated = MAX_STRING_LEN, diff;
