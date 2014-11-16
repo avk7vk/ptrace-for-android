@@ -209,4 +209,4 @@ close(1) = 0
 close(2) = 0
 futex(0xb6f64d4c, 129, 2147483647, 0xb6f63514, 0xb6f64d4c, -1225631451) = 0
 munmap(-1225252864, 4096) = 0
-exit_group(0) = 
+exit_group(0) = 0
