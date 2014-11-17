@@ -4,7 +4,8 @@
 enum argtype {
     ARG_INT,
     ARG_PTR,
-    ARG_STR
+    ARG_STR,
+    ARG_SOCK
 };
 
 struct syscall_entry {
@@ -1017,7 +1018,7 @@ struct syscall_entry syscalls[] = {
   [283] = {
     .name  = "connect",
     .nargs = 3,
-    .args  = {ARG_INT, ARG_PTR, ARG_INT, -1, -1, -1}},
+    .args  = {ARG_INT, ARG_SOCK, ARG_INT, -1, -1, -1}},
   [284] = {
     .name  = "listen",
     .nargs = 2,
@@ -1025,15 +1026,15 @@ struct syscall_entry syscalls[] = {
   [285] = {
     .name  = "accept",
     .nargs = 3,
-    .args  = {ARG_INT, ARG_PTR, ARG_PTR, -1, -1, -1}},
+    .args  = {ARG_INT, ARG_SOCK, ARG_PTR, -1, -1, -1}},
   [286] = {
     .name  = "getsockname",
     .nargs = 3,
-    .args  = {ARG_INT, ARG_PTR, ARG_PTR, -1, -1, -1}},
+    .args  = {ARG_INT, ARG_SOCK, ARG_PTR, -1, -1, -1}},
   [287] = {
     .name  = "getpeername",
     .nargs = 3,
-    .args  = {ARG_INT, ARG_PTR, ARG_PTR, -1, -1, -1}},
+    .args  = {ARG_INT, ARG_SOCK, ARG_PTR, -1, -1, -1}},
   [288] = {
     .name  = "socketpair",
     .nargs = 4,
@@ -1045,7 +1046,7 @@ struct syscall_entry syscalls[] = {
   [290] = {
     .name  = "sendto",
     .nargs = 6,
-    .args  = {ARG_INT, ARG_PTR, ARG_INT, ARG_INT, ARG_PTR, ARG_INT}},
+    .args  = {ARG_INT, ARG_PTR, ARG_INT, ARG_INT, ARG_SOCK, ARG_INT}},
   [291] = {
     .name  = "recv",
     .nargs = 6,
@@ -1053,7 +1054,7 @@ struct syscall_entry syscalls[] = {
   [292] = {
     .name  = "recvfrom",
     .nargs = 6,
-    .args  = {ARG_INT, ARG_PTR, ARG_INT, ARG_INT, ARG_PTR, ARG_PTR}},
+    .args  = {ARG_INT, ARG_PTR, ARG_INT, ARG_INT, ARG_SOCK, ARG_PTR}},
   [293] = {
     .name  = "shutdown",
     .nargs = 2,
@@ -1349,7 +1350,7 @@ struct syscall_entry syscalls[] = {
   [366] = {
     .name  = "accept4",
     .nargs = 4,
-    .args  = {ARG_INT, ARG_PTR, ARG_PTR, ARG_INT, -1, -1}},
+    .args  = {ARG_INT, ARG_SOCK, ARG_PTR, ARG_INT, -1, -1}},
   [367] = {
     .name  = "fanotify_init",
     .nargs = 2,

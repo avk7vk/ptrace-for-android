@@ -9,6 +9,9 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #if defined(__x86_64__) || defined(_x86__)
 	#include <sys/reg.h>
@@ -27,7 +30,7 @@
 #define char_size sizeof(char)
 #define MAX_REG_ENTRIES 30
 #define MAX_SYS_REG_ENTRIES 8
-#define DBG printf("In %s at %d", __FUNCTION__, __LINE__)
+#define DBG printf("In %s at %d\n", __FUNCTION__, __LINE__)
 const int long_size = sizeof(long);
 int wait_for_syscall(pid_t child);
 
@@ -44,6 +47,7 @@ void print_syscall(pid_t , long* , char *, int );
 void print_syscall_args(pid_t , long* , char *, int );
 const char *syscall_name(int scn);
 char *read_string(pid_t child, unsigned long addr);
+char* handle_sockaddr(pid_t child, unsigned long arg);
 
 #include "defs.h"
 #include "syscall_interpret.h"
@@ -76,7 +80,7 @@ int interpret_syscall(long *reg_array, pid_t child,
  	}
 
  	return 0;
- } 
+ }
 
 /* Get_regs 
  * child - tracee's PID
@@ -140,8 +144,10 @@ void print_syscall(pid_t child, long* sys_regs, char *buf,
 
     snprintf(&out_str[strlen(out_str)], 
     	(slen-strlen(out_str)), "%s(", syscall_name(num));
+    	
     print_syscall_args(child, sys_regs, &out_str[strlen(out_str)], 
     	(slen-strlen(out_str)));
+    	
     snprintf(&out_str[strlen(out_str)], 
     	(slen-strlen(out_str)), ") = ");
 
@@ -162,18 +168,30 @@ void print_syscall_args(pid_t child, long* sys_regs, char * buf,int slen) {
         int type = ent ? ent->args[i] : ARG_PTR;
         switch (type) {
         case ARG_INT:
+        	
             snprintf(&buf[strlen(buf)], slen -strlen(buf), 
             	"%ld", arg);
             break;
         case ARG_STR:
     		{
+    			
     			char *strval = read_string(child, arg);
             	snprintf(&buf[strlen(buf)], slen -strlen(buf), 
             		"\"%s\"", strval);
             	free(strval);
             }
             break;
+         case ARG_SOCK:
+         	{
+	         	char *ipaddr = handle_sockaddr(child, arg);
+	         	
+	         	snprintf(&buf[strlen(buf)], slen -strlen(buf), 
+	            		"\"%s\"", ipaddr);
+         		free(ipaddr);
+         	}
+         	break;
         default:
+        	
             snprintf(&buf[strlen(buf)], slen -strlen(buf), 
             	 "0x%lx", arg);
             break;
@@ -181,6 +199,7 @@ void print_syscall_args(pid_t child, long* sys_regs, char * buf,int slen) {
         if (i != nargs - 1)
             snprintf(&buf[strlen(buf)], slen -strlen(buf),  ", ");
     }
+    
 }
 const char *syscall_name(int scn) {
     struct syscall_entry *ent;
@@ -223,6 +242,54 @@ int check_blocklist(char* filename, unsigned long eax) {
 	if (fp)
 		fclose(fp);
 	return ret;
+}
+char* handle_sockaddr(pid_t child, unsigned long addr) {
+	const int sockaddr_sz = sizeof(struct sockaddr);
+	struct sockaddr sk;
+	struct sockaddr_in* si;
+	unsigned long tmp;
+	int read = 0; 
+	int itrs = sockaddr_sz / long_size;
+	char* str = (char *)malloc((INET_ADDRSTRLEN +1) * sizeof(char));
+	//snprintf(str, INET_ADDRSTRLEN, "0x%lx", addr);
+	int i;
+	unsigned long ipAddr;
+	
+	strcpy(str, "IP ADDR");
+	for (i = 0; i < itrs; i++) {
+		tmp = ptrace(PTRACE_PEEKTEXT, child, addr + read, NULL);
+		if(errno != 0) {
+            fprintf(stderr, "%s at %d/%d\n",strerror(errno), i,itrs);
+			goto err_exit;            
+        }
+		memcpy(&sk + read, &tmp, sizeof tmp);
+		read += sizeof tmp;
+	}
+	
+	itrs = sockaddr_sz % long_size;
+	if (itrs != 0) {
+		tmp = ptrace(PTRACE_PEEKTEXT, child, addr + read, NULL);
+		if(errno != 0) {
+            fprintf(stderr,"%s at %d\n",strerror(errno), itrs);
+            goto err_exit;
+        }
+		memcpy(&sk + read, &tmp, itrs);
+		read += itrs;
+	}
+	si = (struct sockaddr_in *)&sk;
+	
+	ipAddr= si->sin_addr.s_addr;
+	
+	if(inet_ntop( AF_INET, &ipAddr, str, INET_ADDRSTRLEN )) {
+		
+		//printf("Ip Addr : %s\n", str);
+	}
+	else { 
+		
+	 	//printf("Error in sockaddr\n");
+	 }
+	 err_exit:
+	 return str; 
 }
 char *read_string(pid_t child, unsigned long addr) {
     

@@ -112,14 +112,18 @@ int main(int argc, char* argv[])
 						}
 					}
 					print_syscall(childPid, reg_array, tmp, len);
+					
 					printf("%s", tmp);
 					
 					if (write_file(tmp, strlen(tmp)) < 0) {
 						ret = errno;
+						
 						goto err_exit;
 					}
+					
 				}
 				else {
+					
 					printf("Sys Call Error : %ld", (long)reg_array[0]);
 					printf("No : %d\n",errno);
 				}
