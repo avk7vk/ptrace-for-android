@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
 			printf("\n========Hi I am in Parent Process=======\n");
 			printf("Child PID = %d\n", childPid);
 			
-			if(open_file("testing.txt")) {
+			if(open_file("/storage/sdcard/testing.txt")) {
 				ret = errno;
 				
 				goto err_exit;
@@ -104,6 +104,8 @@ int main(int argc, char* argv[])
 				if(orig_eax >= 0) {
 					if (block == 1) {
 						if (check_blocklist(filename, orig_eax) == 1) {
+							if(trace_flag == 1)
+								ptrace(PTRACE_DETACH, childPid, NULL, NULL);
 							kill(childPid,SIGKILL);
 							goto err_exit;
 						}
