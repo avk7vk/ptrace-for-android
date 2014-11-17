@@ -27,6 +27,18 @@ sys_getsockopt(2)            */
 sys_sendmsg(2)               */
 sys_recvmsg(2)               */
 
+With Ip addr
+=============
+int Recvfrom(int s, void *buf, int len, int flags, struct sockaddr *from, int *fromlen)
+
+sys_connect	int fd	struct sockaddr *uservaddr	int addrlen
+sys_accept	int fd	struct sockaddr *upeer_sockaddr	int *upeer_addrlen
+sys_sendto	int fd	void *buff	size_t len	unsigned flags	struct sockaddr *addr	int addr_len
+sys_recvfrom	int fd	void *ubuf	size_t size	unsigned flags	struct sockaddr *addr	int *addr_len
+sys_getsockname	int fd	struct sockaddr *usockaddr	int *usockaddr_len
+sys_getpeername	int fd	struct sockaddr *usockaddr	int *usockaddr_len
+sys_accept4	int fd	struct sockaddr *upeer_sockaddr	int *upeer_addrlen
+
 File I/O
 ==========
 open

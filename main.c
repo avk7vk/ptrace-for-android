@@ -88,8 +88,9 @@ int main(int argc, char* argv[])
 			//	printf("PTRACE_SETOPTIONS Success\n");
 			//}
 
-						
+			printf("START_TRACE\n");			
 			while(1){
+
 				int reg_err;
 				long reg_array[MAX_SYS_REG_ENTRIES];
 				const unsigned int len = MAX_OUT_STRING_LEN;; 
@@ -145,6 +146,7 @@ int main(int argc, char* argv[])
 	}
 
 	err_exit:
+	printf("\nEND_TRACE\n");
 	if(tmp) free(tmp);
 	if(fd) fclose(fd);
 	return ret;
@@ -168,10 +170,12 @@ int wait_for_syscall(pid_t child) {
 			return 0;
 		}
 		if (WIFEXITED(status)) {
+			printf("END_TRACE\n");
 			printf("Child process exited Normally\n");
 			return 1;
 		}
 		if (WIFSIGNALED(status) && WTERMSIG(status) == SIGKILL) {
+			printf("END_TRACE\n");
 			printf("Child process was KILL\n");
 			return 1;
 		}
