@@ -48,7 +48,9 @@ void print_syscall_args(pid_t , long* , char *, int );
 const char *syscall_name(int scn);
 char *read_string(pid_t child, unsigned long addr);
 char* handle_sockaddr(pid_t child, unsigned long arg);
-
+char* handle_sockfd(pid_t child, unsigned long addr);
+int halt_syscall(char* filename, unsigned long eax);
+void pause_syscall();
 #include "defs.h"
 #include "syscall_interpret.h"
 
@@ -183,7 +185,7 @@ void print_syscall_args(pid_t child, long* sys_regs, char * buf,int slen) {
             break;
          case ARG_SOCK:
          	{
-	         	char *ipaddr = handle_sockaddr(child, arg);
+	         	char *ipaddr = handle_sockfd(child, arg);
 	         	
 	         	snprintf(&buf[strlen(buf)], slen -strlen(buf), 
 	            		"\"%s\"", ipaddr);
@@ -243,43 +245,61 @@ int check_blocklist(char* filename, unsigned long eax) {
 		fclose(fp);
 	return ret;
 }
-char* handle_sockaddr(pid_t child, unsigned long addr) {
-	const int sockaddr_sz = sizeof(struct sockaddr);
+int halt_syscall(char* filename, unsigned long eax) {
+	char *line = NULL;
+	size_t len = 0;
+	int ret = 0;
+	ssize_t read;
+	FILE *fp = NULL;
+	if(!filename)
+		goto out;
+	fp = fopen(filename, "r");
+	if (!fp)
+		goto out;
+	while ((read = getline(&line, &len, fp)) != -1) {
+		line[(int)strlen(line)-1] = '\0';
+		if (!strcmp(line, syscall_name(eax)) || 
+			!strcmp(line, "all")) {
+			fprintf(stderr,"System call %s matched with entry in "
+				" in block list\n", line);
+			ret = 1;
+		}
+		//printf("%s %s\n",line, syscall_name(eax));
+		if(line) {
+			free(line);
+			line = NULL;
+		}
+		if(ret == 1) {
+			pause_syscall();
+			break;
+		}
+	}
+	out:
+	if (fp)
+		fclose(fp);
+	return ret;
+}
+char* handle_sockfd(pid_t child, unsigned long addr) {
 	struct sockaddr sk;
 	struct sockaddr_in* si;
-	unsigned long tmp;
-	int read = 0; 
-	int itrs = sockaddr_sz / long_size;
 	char* str = (char *)malloc((INET_ADDRSTRLEN +1) * sizeof(char));
-	//snprintf(str, INET_ADDRSTRLEN, "0x%lx", addr);
-	int i;
+	int org_sockfd = (int) addr, new_sockfd; 
+	socklen_t len;
 	unsigned long ipAddr;
-	
 	strcpy(str, "IP ADDR");
-	for (i = 0; i < itrs; i++) {
-		tmp = ptrace(PTRACE_PEEKTEXT, child, addr + read, NULL);
-		if(errno != 0) {
-            fprintf(stderr, "%s at %d/%d\n",strerror(errno), i,itrs);
-			goto err_exit;            
-        }
-		memcpy(&sk + read, &tmp, sizeof tmp);
-		read += sizeof tmp;
+	new_sockfd = fcntl(org_sockfd, F_DUPFD);
+	if(errno !=0){
+		fprintf(stderr,"Org SockFd :%d New : %d Error : %s\n", 
+			org_sockfd, new_sockfd, strerror(errno));
+		goto err_exit;
 	}
-	
-	itrs = sockaddr_sz % long_size;
-	if (itrs != 0) {
-		tmp = ptrace(PTRACE_PEEKTEXT, child, addr + read, NULL);
-		if(errno != 0) {
-            fprintf(stderr,"%s at %d\n",strerror(errno), itrs);
-            goto err_exit;
-        }
-		memcpy(&sk + read, &tmp, itrs);
-		read += itrs;
+	getpeername(new_sockfd, &sk, &len);
+	if(errno !=0){
+		fprintf(stderr,"SockFd :%d Error : %s\n", new_sockfd, strerror(errno));
+		goto err_exit;
 	}
 	si = (struct sockaddr_in *)&sk;
-	
 	ipAddr= si->sin_addr.s_addr;
-	
 	if(inet_ntop( AF_INET, &ipAddr, str, INET_ADDRSTRLEN )) {
 		
 		//printf("Ip Addr : %s\n", str);
@@ -316,6 +336,14 @@ char *read_string(pid_t child, unsigned long addr) {
         read += sizeof tmp;
     }
     return val;
+}
+
+void pause_syscall() {
+    
+        do {
+            char buf[2];
+            fgets(buf, sizeof(buf), stdin); // waits until enter to continue
+        } while(0);
 }
 /* Get_String_Data 
  * child - tracee's PID
@@ -495,4 +523,53 @@ static int test_ptrace_setoptions_for_all(void)
 	printf("Test for PTRACE_O_TRACESYSGOOD failed, "
 		  "giving up using this feature.");
 	return 1;
+}
+
+char* handle_sockaddr(pid_t child, unsigned long addr) {
+	const int sockaddr_sz = sizeof(struct sockaddr);
+	struct sockaddr sk;
+	struct sockaddr_in* si;
+	unsigned long tmp;
+	int read = 0; 
+	int itrs = sockaddr_sz / long_size;
+	char* str = (char *)malloc((INET_ADDRSTRLEN +1) * sizeof(char));
+	//snprintf(str, INET_ADDRSTRLEN, "0x%lx", addr);
+	int i;
+	unsigned long ipAddr;
+	
+	strcpy(str, "IP ADDR");
+	for (i = 0; i < itrs; i++) {
+		tmp = ptrace(PTRACE_PEEKTEXT, child, addr + read, NULL);
+		if(errno != 0) {
+            fprintf(stderr, "%s at %d/%d\n",strerror(errno), i,itrs);
+			goto err_exit;            
+        }
+		memcpy(&sk + read, &tmp, sizeof tmp);
+		read += sizeof tmp;
+	}
+	
+	itrs = sockaddr_sz % long_size;
+	if (itrs != 0) {
+		tmp = ptrace(PTRACE_PEEKTEXT, child, addr + read, NULL);
+		if(errno != 0) {
+            fprintf(stderr,"%s at %d\n",strerror(errno), itrs);
+            goto err_exit;
+        }
+		memcpy(&sk + read, &tmp, itrs);
+		read += itrs;
+	}
+	si = (struct sockaddr_in *)&sk;
+	
+	ipAddr= si->sin_addr.s_addr;
+	
+	if(inet_ntop( AF_INET, &ipAddr, str, INET_ADDRSTRLEN )) {
+		
+		//printf("Ip Addr : %s\n", str);
+	}
+	else { 
+		
+	 	//printf("Error in sockaddr\n");
+	 }
+	 err_exit:
+	 return str; 
 }

@@ -11,8 +11,8 @@ int main(int argc, char* argv[])
 	char **cmd_path;
 	char *cmd_name;
 	int ret = 0, trace_flag = 0;
-	int block = 0;
-	char *filename = NULL;
+	int block = 0, halt = 0;
+	char *filename = NULL, *hfilename = NULL;
 
 	if(argc < 2) {
 		cmd_name = "ls";
@@ -31,11 +31,18 @@ int main(int argc, char* argv[])
 			printf("%s", cmd_path[i++]);
 		}
 	}
-	else if (!strcmp(argv[1], "-p") && (argc == 3||argc == 5)) {
+	else if (!strcmp(argv[1], "-p") && (argc == 3)) {
+		trace_flag = 1;
+	}
+	else if (!strcmp(argv[1], "-p") && (argc == 5)) {
 		trace_flag = 1;
 		if (argc == 5 && !strcmp(argv[3], "-i")) {
 			block = 1;
 			filename = argv[4];
+		}
+		else if(argc == 5 && !strcmp(argv[3], "-h")) {
+			halt = 1;
+			hfilename = argv[4];
 		}
 		
 	}
@@ -111,9 +118,14 @@ int main(int argc, char* argv[])
 							goto err_exit;
 						}
 					}
+					
 					print_syscall(childPid, reg_array, tmp, len);
 					
 					printf("%s", tmp);
+					
+					if (halt == 1) {
+						halt_syscall(hfilename, orig_eax);
+					}
 					
 					if (write_file(tmp, strlen(tmp)) < 0) {
 						ret = errno;
@@ -123,7 +135,7 @@ int main(int argc, char* argv[])
 					
 				}
 				else {
-					
+
 					printf("Sys Call Error : %ld", (long)reg_array[0]);
 					printf("No : %d\n",errno);
 				}
