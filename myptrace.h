@@ -185,11 +185,14 @@ void print_syscall_args(pid_t child, long* sys_regs, char * buf,int slen) {
             break;
          case ARG_SOCK:
          	{
-	         	char *ipaddr = handle_sockfd(child, arg);
+	         	/*char *ipaddr = handle_sockfd(child, arg);
 	         	
 	         	snprintf(&buf[strlen(buf)], slen -strlen(buf), 
 	            		"\"%s\"", ipaddr);
          		free(ipaddr);
+         		*/
+         		snprintf(&buf[strlen(buf)], slen -strlen(buf), 
+            	"%ld", arg);
          	}
          	break;
         default:
