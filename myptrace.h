@@ -51,6 +51,7 @@ char* handle_sockaddr(pid_t child, unsigned long arg);
 char* handle_sockfd(pid_t child, unsigned long addr);
 int halt_syscall(char* filename, unsigned long eax);
 void pause_syscall();
+char* handle_fd(pid_t child, int fd);
 #include "defs.h"
 #include "syscall_interpret.h"
 
@@ -191,8 +192,10 @@ void print_syscall_args(pid_t child, long* sys_regs, char * buf,int slen) {
 	            		"\"%s\"", ipaddr);
          		free(ipaddr);
          		*/
+         		char *strval = handle_fd(child, (int) arg);
          		snprintf(&buf[strlen(buf)], slen -strlen(buf), 
-            	"%ld", arg);
+            		"\"%s\"", strval);
+            	free(strval);
          	}
          	break;
         default:
@@ -313,6 +316,23 @@ char* handle_sockfd(pid_t child, unsigned long addr) {
 	 }
 	 err_exit:
 	 return str; 
+}
+char* handle_fd(pid_t child, int fd) {
+	int buf_size = MAX_STRING_LEN + 1;
+	char *buf = (char *)calloc(buf_size, sizeof(char));
+	char *fp = (char *)calloc(100,sizeof(char));
+	snprintf(fp, 100,"/proc/%d/fd/%d", (int)child, fd);
+	readlink(fp, buf, buf_size);
+	if(errno != 0) {
+            fprintf(stderr,"%s",strerror(errno));
+     		snprintf(buf, buf_size,"%d",fd);
+     }
+     else {
+     	snprintf(&buf[strlen(buf)],buf_size-strlen(buf),
+     	" - %d",fd);
+     }
+     free(fp);
+     return buf;
 }
 char *read_string(pid_t child, unsigned long addr) {
     

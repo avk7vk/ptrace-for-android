@@ -80,12 +80,13 @@ int main(int argc, char* argv[])
 			
 			printf("\n========Hi I am in Parent Process=======\n");
 			printf("Child PID = %d\n", childPid);
-			
+			/*
 			if(open_file("/storage/sdcard/testing.txt")) {
 				ret = errno;
 				
 				goto err_exit;
 			}
+			*/
 			
 			waitpid(childPid, &status, 0);
 			
@@ -126,12 +127,13 @@ int main(int argc, char* argv[])
 					if (halt == 1) {
 						halt_syscall(hfilename, orig_eax);
 					}
-					
+					/*
 					if (write_file(tmp, strlen(tmp)) < 0) {
 						ret = errno;
 						
 						goto err_exit;
 					}
+					*/
 					
 				}
 				else {
@@ -146,10 +148,12 @@ int main(int argc, char* argv[])
 				printf("%ld\n", eax);
 				snprintf(tmp, len,"%ld\n", eax);
 				
+				/*
 				if (write_file(tmp, strlen(tmp)) < 0) {
 					ret = errno;
 					goto err_exit;
 				}
+				*/
 				
 			}
 			if (trace_flag == 1)
