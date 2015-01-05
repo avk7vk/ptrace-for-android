@@ -47,7 +47,7 @@ public class Parser {
                 Log.v("Parser1c", "Exception :" +e);
             }
             while (true) {
-                Log.v("test2","asdf");
+                //Log.v("test2","asdf");
                 try {
                     line1 = reader.readLine();
                     //Log.v("Parser21", line1 + "\n");
@@ -108,7 +108,7 @@ public class Parser {
 
                     }
                     SysCallHolder holder = new SysCallHolder(sysCall, retValue, argArray);
-                    Log.v("Parser23", sysCall + " " + retValue + "" + argArray + "\n");
+                    //Log.v("Parser23", sysCall + " " + retValue + "" + argArray + "\n");
                     //holders.add(holder);
                     Message m = new Message();
                     m.setTarget(myHandler);

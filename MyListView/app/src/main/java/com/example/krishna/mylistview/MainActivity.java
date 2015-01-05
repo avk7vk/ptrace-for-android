@@ -25,6 +25,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +41,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         final ListView listview = (ListView)findViewById(R.id.appsListView);
-        ArrayList<PInfo> appsList = getRunningApps();
+        ArrayList<PInfo> appsList = getInstalledApps(false);//getRunningApps();
         final AppsAdapter adapter = new AppsAdapter(this, appsList);
 
         listview.setAdapter(adapter);
@@ -107,43 +108,78 @@ public class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void launchApp(PInfo info) {
-        Intent intent = getPackageManager().getLaunchIntentForPackage(info.pname);
-        if (intent != null) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-
+    public boolean launchApp(PInfo info) {
+        boolean launched = false;
+        try {
+            final Intent intent = getPackageManager().getLaunchIntentForPackage(info.pname);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    startActivity(intent);
+                }
+            }).start();
+            launched = true;
+        }catch(Exception e) {
+            System.out.println("Exception : "+e);
         }
-        else {
-            /* bring user to the market or let them choose an app? */
-            intent = new Intent(Intent.ACTION_VIEW);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-        }
+        return launched;
     }
 
     public void trackSyscalls(PInfo item) {
-        Intent intent = new Intent(this, TrackSysCalls.class);
-        intent.putExtra(EXTRA_PID, item.pid+"");
-        intent.putExtra(EXTRA_PNAME, item.pname);
-        startActivity(intent);
+
+        if(launchApp(item)) {
+            getPidOfApp(item);
+            final Intent intent = new Intent(this, TrackSysCalls.class);
+            intent.putExtra(EXTRA_PID, item.pid + "");
+            intent.putExtra(EXTRA_PNAME, item.pname);
+            //intent.putExtra(EXTRA_PID, item);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    startActivity(intent);
+                }
+            }).start();
+        }
+    }
+    private void getPidOfApp(PInfo item) {
+        int i = 0;
+        while (true){
+            i++;
+            System.out.println("In Iter : "+i);
+            ActivityManager manager = (ActivityManager)getSystemService(Context.ACTIVITY_SERVICE);
+            List<ActivityManager.RunningAppProcessInfo> services = manager.getRunningAppProcesses();
+            for(ActivityManager.RunningAppProcessInfo service : services ) {
+                try {
+                    if(item.pname.equals(service.processName)) {
+                        item.pid = service.pid;
+                        return;
+                    }
+                } catch (Exception e) {
+                    Log.v("MAINACT", "Exception" + e);
+                }
+            }
+        }
     }
     private ArrayList<PInfo> getInstalledApps(boolean getSysPackages) {
         ArrayList<PInfo> res = new ArrayList<PInfo>();
         List<PackageInfo> packs = getPackageManager().getInstalledPackages(0);
         for(int i=0;i<packs.size();i++) {
-            PackageInfo p = packs.get(i);
-            ApplicationInfo ai = p.applicationInfo;
-            /*
-            if ((!getSysPackages) && (!ai.sourceDir.startsWith("/data/app"))) {
-                continue ;
+
+            try {
+                PackageInfo p = packs.get(i);
+
+                ApplicationInfo ai = p.applicationInfo;
+                PInfo newInfo = new PInfo();
+                newInfo.appname = p.applicationInfo.loadLabel(getPackageManager()).toString();
+                newInfo.pname = p.packageName;
+                newInfo.icon = p.applicationInfo.loadIcon(getPackageManager());
+                if (getPackageManager().getLaunchIntentForPackage(p.packageName) == null) {
+                    continue;
+                }
+                res.add(newInfo);
+            }catch (Exception e){
+                System.out.println("Exception @getInstalledApps : "+e);
             }
-            */
-            PInfo newInfo = new PInfo();
-            newInfo.appname = p.applicationInfo.loadLabel(getPackageManager()).toString();
-            newInfo.pname = p.packageName;
-            newInfo.icon = p.applicationInfo.loadIcon(getPackageManager());
-            res.add(newInfo);
         }
         return res;
     }
@@ -197,6 +233,7 @@ public class MainActivity extends Activity {
             PInfo info = this.mApps.get(position);
             hendler.iconImage.setImageDrawable(info.icon);
             hendler.textLable.setText(info.appname);
+            hendler.textLable.setPadding(100, 40, 0, 10);
 
             return convertView;
 
@@ -221,9 +258,3 @@ public class MainActivity extends Activity {
     }
 }
 
-class PInfo {
-    protected String appname = "";
-    protected String pname = "";
-    protected Drawable icon;
-    protected int pid = 0;
-}

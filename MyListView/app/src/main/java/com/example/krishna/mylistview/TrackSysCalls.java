@@ -1,7 +1,11 @@
 package com.example.krishna.mylistview;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Message;
 import android.view.Menu;
@@ -36,14 +40,20 @@ public class TrackSysCalls extends ExpandableListActivity {
     private ArrayList<String> parentItems = new ArrayList<String>();
     private ArrayList<ArrayList<String>> childItems = new ArrayList<ArrayList<String>>();
     private MyExpandableAdapter adapter;
-    private DropDown dropDown;
-    public Button button;
     private Spinner spinner;
     private Handler myHandler = new Handler() {
         @Override
         public void handleMessage(Message message){
             SysCallHolder sysCallObj = (SysCallHolder)message.obj;
             adapter.addtoUI(sysCallObj);
+        }
+    };
+    private Handler mySpinHandler = new Handler() {
+        @Override
+        public void handleMessage(Message message){
+            String filter = (String)message.obj;
+            System.out.println("mySpinHandler : "+filter);
+            adapter.changeFilter(filter);
         }
     };
 
@@ -54,32 +64,17 @@ public class TrackSysCalls extends ExpandableListActivity {
         Intent intent = getIntent();
         String spid = intent.getStringExtra(MainActivity.EXTRA_PID);
         String pname = intent.getStringExtra(MainActivity.EXTRA_PNAME);
+        //PInfo item = (PInfo)intent.getSerializableExtra(MainActivity.EXTRA_ITEM);
         Log.v("TRACK", "SPID :"+spid);
         Log.v("TRACK", "SPID :"+pname);
         setTitle(pname);
         //int pid = Integer.getInteger(spid);
         // this is not really  necessary as ExpandableListActivity contains an ExpandableList
-       // setContentView(R.layout.activity_track_sys_calls);
-        /*LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        spinner = (Spinner) inflater.inflate(R.layout.activity_track_sys_calls, null).findViewById(R.id.spinner);;
-        Log.v("TRACK",""+spinner);
-
-        ArrayList list1 = new ArrayList<String>();
-        list1.add("write");
-        list1.add("open");
-        list1.add("close");
-
-
-
-        ArrayAdapter<String> spinAdapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, list1);
-
-        spinAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-
-        spinner.setAdapter(spinAdapter);
-        */
+        setContentView(R.layout.activity_track_sys_calls);
+        setMenuIcon(pname);
+        addItemsOnSpinner();
         ExpandableListView expandableList = getExpandableListView(); // you can use (ExpandableListView) findViewById(R.id.list)
-
+        //ExpandableListView expandableList = (ExpandableListView) findViewById(R.id.list);
         expandableList.setDividerHeight(2);
         expandableList.setGroupIndicator(null);
         expandableList.setClickable(true);
@@ -191,5 +186,46 @@ public class TrackSysCalls extends ExpandableListActivity {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
         }
+    }
+    public void addItemsOnSpinner() {
+
+        spinner = (Spinner) findViewById(R.id.myspinner);
+        System.out.println(spinner);
+        List<String> list = new ArrayList<String>();
+        list.add("ALL");
+        list.add("File I/O");
+        list.add("Network");
+        list.add("Memory");
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_spinner_item, list);
+        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(dataAdapter);
+        spinner.setOnItemSelectedListener(new SpinnerItemListener(mySpinHandler));
+    }
+    public void setMenuIcon(final String pname){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                List<PackageInfo> packs = getPackageManager().getInstalledPackages(0);
+                for(int i=0;i<packs.size();i++) {
+
+                    try {
+                        PackageInfo p = packs.get(i);
+
+                        ApplicationInfo ai = p.applicationInfo;
+                        //System.out.println("pname = " + p.packageName);
+                        if (pname.equals(p.packageName)) {
+                            //System.out.println("Matched pname = " + p.packageName);
+                            Drawable icon = p.applicationInfo.loadIcon(getPackageManager());
+                            ActionBar actionBar = getActionBar();
+                            actionBar.setIcon(icon);
+                            break;
+                        }
+                    }catch (Exception e){
+                        System.out.println("Exception @SetMenuIcon : "+e);
+                    }
+                }
+            }
+        }).start();
     }
 }

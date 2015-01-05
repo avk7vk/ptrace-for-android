@@ -9,5 +9,5 @@
     android:textColor="#000000"
     android:textSize="15sp"
     android:textStyle="bold"
-    android:background="#CCFF99"
-    />
+    android:background="#fecdcad6"
+    android:typeface="sans" />

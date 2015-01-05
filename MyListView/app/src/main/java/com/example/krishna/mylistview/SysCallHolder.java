@@ -38,6 +38,6 @@ public class SysCallHolder {
         this.args = args;
     }
     public String getArgsAsString() {
-        return Arrays.toString(getArgs());
+        return Arrays.toString(getArgs())+" = "+getReturnVal();
     }
 }

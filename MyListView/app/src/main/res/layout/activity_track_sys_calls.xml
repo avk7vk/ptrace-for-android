@@ -19,14 +19,14 @@
         android:id="@+id/select_colours"
         android:padding="5dip" /> -->
 
-    <!--<Spinner
-        android:layout_width="fill_parent"
+    <Spinner android:id="@+id/myspinner"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/spinner"
-        android:layout_gravity="center_horizontal" />-->
-
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:textStyle="bold" />
     <ExpandableListView
-        android:id="@+id/list"
+        android:id="@id/android:list"
         android:layout_height="wrap_content"
         android:layout_width="match_parent"
         android:groupIndicator="@null" />

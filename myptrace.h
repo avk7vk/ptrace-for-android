@@ -201,7 +201,7 @@ void print_syscall_args(pid_t child, long* sys_regs, char * buf,int slen) {
         default:
         	
             snprintf(&buf[strlen(buf)], slen -strlen(buf), 
-            	 "0x%lx", arg);
+            	 "0x%lx", (unsigned long)arg);
             break;
         }
         if (i != nargs - 1)
@@ -267,7 +267,7 @@ int halt_syscall(char* filename, unsigned long eax) {
 		if (!strcmp(line, syscall_name(eax)) || 
 			!strcmp(line, "all")) {
 			fprintf(stderr,"System call %s matched with entry in "
-				" in block list\n", line);
+				" in Debug List\n", line);
 			ret = 1;
 		}
 		//printf("%s %s\n",line, syscall_name(eax));
