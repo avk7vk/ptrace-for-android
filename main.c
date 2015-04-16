@@ -77,7 +77,10 @@ int main(int argc, char* argv[])
 				strerror(errno));
 		}
 		else { /*In Parent Processs */
-			
+			int reg_err;
+			long reg_array[MAX_SYS_REG_ENTRIES];
+			const unsigned int len = MAX_OUT_STRING_LEN;
+			tmp = (char *) calloc(len, sizeof(char));
 			printf("\n========Hi I am in Parent Process=======\n");
 			printf("Child PID = %d\n", childPid);
 			/*
@@ -99,10 +102,6 @@ int main(int argc, char* argv[])
 			printf("START_TRACE\n");			
 			while(1){
 
-				int reg_err;
-				long reg_array[MAX_SYS_REG_ENTRIES];
-				const unsigned int len = MAX_OUT_STRING_LEN;; 
-				tmp = (char *) calloc(len, sizeof(char));
 				
 				if(wait_for_syscall(childPid) != 0) break;
 				// sys call entry
@@ -154,7 +153,6 @@ int main(int argc, char* argv[])
 					goto err_exit;
 				}
 				*/
-				
 			}
 			if (trace_flag == 1)
 				ptrace(PTRACE_DETACH, childPid, NULL, NULL);
